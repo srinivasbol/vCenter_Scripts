@@ -23,17 +23,34 @@ def _pick(records: list[dict], keyword: str, fallback: str) -> str:
     return fallback
 
 
+def _latex_escape(text: str) -> str:
+    mapping = {
+        "\\": r"\textbackslash{}",
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\textasciitilde{}",
+        "^": r"\textasciicircum{}",
+    }
+    return "".join(mapping.get(ch, ch) for ch in text)
+
+
 def build_paper(records: list[dict]) -> str:
     thesis_1 = "Cross-cloud IAM token drift introduces latent authorization inconsistencies."
     thesis_2 = "NVMe-oF tier transitions amplify p99 latency during coordinated failover."
     thesis_3 = "GPU thermal throttling can violate access-control SLOs in AI datacenter control loops."
 
-    evidence_1 = _pick(records, "token", "Recent identity incident discussions")
-    evidence_2 = _pick(records, "nvme", "Recent storage architecture disclosures")
-    evidence_3 = _pick(records, "thermal", "Recent datacenter telemetry postmortems")
+    evidence_1 = _latex_escape(_pick(records, "token", "Recent identity incident discussions"))
+    evidence_2 = _latex_escape(_pick(records, "nvme", "Recent storage architecture disclosures"))
+    evidence_3 = _latex_escape(_pick(records, "thermal", "Recent datacenter telemetry postmortems"))
 
     return f"""\\documentclass[conference]{{IEEEtran}}
 \\usepackage{{amsmath,amssymb,graphicx,booktabs,url}}
+\\graphicspath{{{{figures/}}{{output/figures/}}}}
 \\title{{Operational Gaps Across IAM, NVMe-oF Tiers, and GPU Datacenter Control Planes}}
 \\author{{\\IEEEauthorblockN{{Autonomous Research Fellow}}\\IEEEauthorblockA{{Generated {_now()}}}}}
 \\begin{{document}}

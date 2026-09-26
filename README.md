@@ -20,7 +20,6 @@ System tools required:
 python research_pipeline/ingest_trends.py
 python research_pipeline/generate_diagrams.py
 python research_pipeline/draft_manuscript.py
-cd output
-pdflatex paper.tex
-pdflatex paper.tex
+pdflatex -output-directory=output output/paper.tex
+pdflatex -output-directory=output output/paper.tex
 ```
