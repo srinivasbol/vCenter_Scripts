@@ -1,0 +1,64 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{url}
+
+\title{<TITLE: Emerging IAM, Storage, and Datacenter Reliability Gap>}
+
+\author{\IEEEauthorblockN{<Author Name>}\IEEEauthorblockA{<Affiliation> \\
+Email: <email@example.com>}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+<Provide a concise summary of problem, method, and results.>
+\end{abstract}
+
+\begin{IEEEkeywords}
+Identity and access management, distributed storage, datacenter engineering, zero trust, reliability
+\end{IEEEkeywords}
+
+\section{Introduction}
+<Motivation and practical failure context.>
+
+\section{Background and Related Work}
+<Summarize prior work and unresolved engineering pain points.>
+
+\section{Problem Formulation}
+Define risk surface as:
+\begin{equation}
+\mathcal{R}(t)=\sum_{i=1}^{N} w_i\,\Pr(\mathcal{F}_i \mid \theta_t)
+\end{equation}
+where $\mathcal{F}_i$ are failure modes (token drift, tiering latency, thermal throttling).
+
+\section{Threat and Failure Model}
+Specify assets, trust boundaries, adversary capabilities, and operator error channels.
+
+\section{Architecture and Methodology}
+Reference system model figure:
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{output/figures/iam_storage_datacenter_architecture.png}
+\caption{Cross-cloud IAM and storage reliability control plane.}
+\label{fig:architecture}
+\end{figure}
+
+\section{Evaluation Plan and Metrics}
+Use metrics such as revocation propagation delay, p99 storage latency impact, and thermal event MTTR.
+
+\section{Discussion and Limitations}
+Document assumptions, external validity constraints, and deployment caveats.
+
+\section{Conclusion}
+<State contributions and next steps.>
+
+\bibliographystyle{IEEEtran}
+\begin{thebibliography}{99}
+\bibitem{rfc6749} D. Hardt, "The OAuth 2.0 Authorization Framework," RFC 6749, 2012.
+\bibitem{nvmeof} NVM Express, "NVM Express over Fabrics," 2023.
+\bibitem{zerotrust} S. Rose et al., "Zero Trust Architecture," NIST SP 800-207, 2020.
+\end{thebibliography}
+
+\end{document}

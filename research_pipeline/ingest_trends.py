@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""Ingest IAM/storage/datacenter trend signals into a normalized JSON dataset."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+import arxiv
+import feedparser
+import requests
+
+
+DEFAULT_QUERY = (
+    '"identity and access management" OR "distributed storage" OR "datacenter engineering" '
+    'OR "zero trust" OR "NVMe-oF" OR "CXL memory" OR "GPU thermal throttling"'
+)
+
+DEFAULT_FEEDS = [
+    "https://blog.cloudflare.com/rss/",
+    "https://netflixtechblog.com/feed",
+    "https://engineering.fb.com/feed/",
+    "https://security.googleblog.com/feeds/posts/default?alt=rss",
+]
+
+
+@dataclass
+class TrendRecord:
+    title: str
+    summary: str
+    url: str
+    source: str
+    published: str | None = None
+    tags: list[str] | None = None
+
+
+def _iso_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def fetch_arxiv(query: str, max_results: int) -> list[TrendRecord]:
+    client = arxiv.Client()
+    search = arxiv.Search(
+        query=query,
+        max_results=max_results,
+        sort_by=arxiv.SortCriterion.SubmittedDate,
+    )
+    records: list[TrendRecord] = []
+    for result in client.results(search):
+        records.append(
+            TrendRecord(
+                title=result.title.strip(),
+                summary=(result.summary or "").strip(),
+                url=result.entry_id,
+                source="arXiv",
+                published=result.published.isoformat() if result.published else None,
+                tags=[c for c in result.categories],
+            )
+        )
+    return records
+
+
+def fetch_rss(feeds: list[str], per_feed: int) -> list[TrendRecord]:
+    records: list[TrendRecord] = []
+    for feed_url in feeds:
+        parsed = feedparser.parse(feed_url)
+        source = parsed.feed.get("title", feed_url)
+        for entry in parsed.entries[:per_feed]:
+            records.append(
+                TrendRecord(
+                    title=entry.get("title", "untitled"),
+                    summary=(entry.get("summary", "") or entry.get("description", ""))[:1200],
+                    url=entry.get("link", feed_url),
+                    source=f"RSS:{source}",
+                    published=entry.get("published"),
+                    tags=[t.get("term", "") for t in entry.get("tags", []) if t.get("term")],
+                )
+            )
+    return records
+
+
+def fetch_reddit(query: str, limit: int) -> list[TrendRecord]:
+    client_id = os.getenv("REDDIT_CLIENT_ID")
+    client_secret = os.getenv("REDDIT_CLIENT_SECRET")
+    user_agent = os.getenv("REDDIT_USER_AGENT", "research-fellow-trend-ingestor/1.0")
+
+    if not (client_id and client_secret):
+        return []
+
+    token_resp = requests.post(
+        "https://www.reddit.com/api/v1/access_token",
+        auth=(client_id, client_secret),
+        data={"grant_type": "client_credentials"},
+        headers={"User-Agent": user_agent},
+        timeout=30,
+    )
+    token_resp.raise_for_status()
+    token = token_resp.json().get("access_token")
+    if not token:
+        return []
+
+    search_resp = requests.get(
+        "https://oauth.reddit.com/search",
+        headers={"Authorization": f"******", "User-Agent": user_agent},
+        params={"q": query, "sort": "new", "limit": limit, "type": "link"},
+        timeout=30,
+    )
+    search_resp.raise_for_status()
+
+    records: list[TrendRecord] = []
+    for child in search_resp.json().get("data", {}).get("children", []):
+        data = child.get("data", {})
+        records.append(
+            TrendRecord(
+                title=data.get("title", "untitled"),
+                summary=(data.get("selftext", "") or "")[:1200],
+                url=f"https://reddit.com{data.get('permalink', '')}",
+                source=f"Reddit:r/{data.get('subreddit', 'unknown')}",
+                published=datetime.fromtimestamp(data.get("created_utc", 0), tz=timezone.utc).isoformat()
+                if data.get("created_utc")
+                else None,
+                tags=["reddit", data.get("subreddit", "")],
+            )
+        )
+    return records
+
+
+def fetch_github_discussions(query: str, limit: int) -> list[TrendRecord]:
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        return []
+
+    graphql_query = {
+        "query": """
+        query($query: String!, $limit: Int!) {
+          search(query: $query, type: DISCUSSION, first: $limit) {
+            nodes {
+              ... on Discussion {
+                title
+                url
+                bodyText
+                createdAt
+                repository { nameWithOwner }
+                category { name }
+              }
+            }
+          }
+        }
+        """,
+        "variables": {
+            "query": f"{query} sort:updated-desc",
+            "limit": limit,
+        },
+    }
+
+    resp = requests.post(
+        "https://api.github.com/graphql",
+        headers={"Authorization": f"******"},
+        json=graphql_query,
+        timeout=30,
+    )
+    resp.raise_for_status()
+    payload = resp.json()
+
+    if payload.get("errors"):
+        return []
+
+    nodes = payload.get("data", {}).get("search", {}).get("nodes", [])
+    records: list[TrendRecord] = []
+    for node in nodes:
+        records.append(
+            TrendRecord(
+                title=node.get("title", "untitled"),
+                summary=(node.get("bodyText", "") or "")[:1200],
+                url=node.get("url", ""),
+                source=f"GitHub Discussions:{node.get('repository', {}).get('nameWithOwner', 'unknown')}",
+                published=node.get("createdAt"),
+                tags=["github-discussion", node.get("category", {}).get("name", "")],
+            )
+        )
+    return records
+
+
+def write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Ingest infrastructure trend signals")
+    parser.add_argument("--query", default=DEFAULT_QUERY, help="search query for sources")
+    parser.add_argument("--max-arxiv", type=int, default=12)
+    parser.add_argument("--max-reddit", type=int, default=20)
+    parser.add_argument("--max-github", type=int, default=20)
+    parser.add_argument("--rss-per-feed", type=int, default=6)
+    parser.add_argument(
+        "--output",
+        default="/home/runner/work/vCenter_Scripts/vCenter_Scripts/output/trends.json",
+        help="output JSON file",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+
+    arxiv_items = fetch_arxiv(args.query, args.max_arxiv)
+    rss_items = fetch_rss(DEFAULT_FEEDS, args.rss_per_feed)
+    reddit_items = fetch_reddit(args.query, args.max_reddit)
+    github_items = fetch_github_discussions(args.query, args.max_github)
+
+    payload = {
+        "generated_at": _iso_now(),
+        "query": args.query,
+        "source_counts": {
+            "arxiv": len(arxiv_items),
+            "rss": len(rss_items),
+            "reddit": len(reddit_items),
+            "github_discussions": len(github_items),
+        },
+        "records": [asdict(item) for item in (arxiv_items + rss_items + reddit_items + github_items)],
+    }
+
+    output_path = Path(args.output)
+    write_json(output_path, payload)
+
+    trends_copy = Path("/home/runner/work/vCenter_Scripts/vCenter_Scripts/data/trends/latest.json")
+    write_json(trends_copy, payload)
+
+    print(f"Trend ingestion complete: {output_path}")
+    print(json.dumps(payload["source_counts"], indent=2))
+
+
+if __name__ == "__main__":
+    main()
