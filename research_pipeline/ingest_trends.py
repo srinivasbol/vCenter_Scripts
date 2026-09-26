@@ -16,6 +16,7 @@ import feedparser
 import requests
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_QUERY = (
     '"identity and access management" OR "distributed storage" OR "datacenter engineering" '
     'OR "zero trust" OR "NVMe-oF" OR "CXL memory" OR "GPU thermal throttling"'
@@ -103,10 +104,11 @@ def fetch_reddit(query: str, limit: int) -> list[TrendRecord]:
     token = token_resp.json().get("access_token")
     if not token:
         return []
+    auth_header = {"Authorization": "Bearer " + token, "User-Agent": user_agent}
 
     search_resp = requests.get(
         "https://oauth.reddit.com/search",
-        headers={"Authorization": f"******", "User-Agent": user_agent},
+        headers=auth_header,
         params={"q": query, "sort": "new", "limit": limit, "type": "link"},
         timeout=30,
     )
@@ -134,6 +136,7 @@ def fetch_github_discussions(query: str, limit: int) -> list[TrendRecord]:
     token = os.getenv("GITHUB_TOKEN")
     if not token:
         return []
+    headers = {"Authorization": "Bearer " + token}
 
     graphql_query = {
         "query": """
@@ -160,7 +163,7 @@ def fetch_github_discussions(query: str, limit: int) -> list[TrendRecord]:
 
     resp = requests.post(
         "https://api.github.com/graphql",
-        headers={"Authorization": f"******"},
+        headers=headers,
         json=graphql_query,
         timeout=30,
     )
@@ -200,8 +203,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rss-per-feed", type=int, default=6)
     parser.add_argument(
         "--output",
-        default="/home/runner/work/vCenter_Scripts/vCenter_Scripts/output/trends.json",
+        default=str(REPO_ROOT / "output" / "trends.json"),
         help="output JSON file",
+    )
+    parser.add_argument(
+        "--latest-copy",
+        default=str(REPO_ROOT / "data" / "trends" / "latest.json"),
+        help="path for optional latest trends copy (set empty to skip)",
     )
     return parser.parse_args()
 
@@ -229,8 +237,8 @@ def main() -> None:
     output_path = Path(args.output)
     write_json(output_path, payload)
 
-    trends_copy = Path("/home/runner/work/vCenter_Scripts/vCenter_Scripts/data/trends/latest.json")
-    write_json(trends_copy, payload)
+    if args.latest_copy:
+        write_json(Path(args.latest_copy), payload)
 
     print(f"Trend ingestion complete: {output_path}")
     print(json.dumps(payload["source_counts"], indent=2))

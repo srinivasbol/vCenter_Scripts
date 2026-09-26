@@ -8,6 +8,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -84,12 +86,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Draft IEEE manuscript from trend dataset")
     parser.add_argument(
         "--trends",
-        default="/home/runner/work/vCenter_Scripts/vCenter_Scripts/output/trends.json",
+        default=str(REPO_ROOT / "output" / "trends.json"),
         help="path to trends JSON",
     )
     parser.add_argument(
         "--output",
-        default="/home/runner/work/vCenter_Scripts/vCenter_Scripts/output/paper.tex",
+        default=str(REPO_ROOT / "output" / "paper.tex"),
         help="output paper tex path",
     )
     return parser.parse_args()

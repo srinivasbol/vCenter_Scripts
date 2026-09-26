@@ -15,6 +15,8 @@ from diagrams.generic.compute import Rack
 from diagrams.onprem.identity import ActiveDirectory
 from diagrams.onprem.monitoring import Prometheus
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 def generate_python_diagram(output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -95,7 +97,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate architecture diagrams for paper")
     parser.add_argument(
         "--output-dir",
-        default="/home/runner/work/vCenter_Scripts/vCenter_Scripts/output/figures",
+        default=str(REPO_ROOT / "output" / "figures"),
         help="directory for generated assets",
     )
     parser.add_argument(
