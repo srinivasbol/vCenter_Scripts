@@ -69,9 +69,12 @@ def fetch_arxiv(query: str, max_results: int) -> list[TrendRecord]:
 def fetch_rss(feeds: list[str], per_feed: int) -> list[TrendRecord]:
     records: list[TrendRecord] = []
     for feed_url in feeds:
-        response = requests.get(feed_url, timeout=30)
-        response.raise_for_status()
-        parsed = feedparser.parse(response.content)
+        try:
+            response = requests.get(feed_url, timeout=30)
+            response.raise_for_status()
+            parsed = feedparser.parse(response.content)
+        except (requests.RequestException, OSError):
+            continue
         source = parsed.feed.get("title", feed_url)
         for entry in parsed.entries[:per_feed]:
             records.append(

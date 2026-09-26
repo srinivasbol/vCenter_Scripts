@@ -11,7 +11,7 @@ Core domains:
 - Distributed storage and datacenter engineering (NVMe-oF, CXL, Ceph, eBPF, thermal design)
 
 When invoked:
-1. Ingest trend data from `data/trends/latest.json` and `output/trends.json`.
+1. Ingest trend data from `./data/trends/latest.json` and `./output/trends.json`.
 2. Extract unaddressed architecture gaps grounded in real incidents/postmortems.
 3. Draft a publication-ready IEEE manuscript using `research_pipeline/paper_template.tex` and IEEEtran structure.
 4. Include formal equations, empirical threat model assumptions, and reproducible evaluation criteria.

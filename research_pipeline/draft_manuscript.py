@@ -49,7 +49,7 @@ def build_paper(records: list[dict]) -> str:
     evidence_3 = _latex_escape(_pick(records, "thermal", "Recent datacenter telemetry postmortems"))
 
     return f"""\\documentclass[conference]{{IEEEtran}}
-\\usepackage{{amsmath,amssymb,graphicx,booktabs,url}}
+\\usepackage{{amsmath,amssymb,graphicx,booktabs,url,textcomp}}
 \\graphicspath{{{{figures/}}{{output/figures/}}}}
 \\title{{Operational Gaps Across IAM, NVMe-oF Tiers, and GPU Datacenter Control Planes}}
 \\author{{\\IEEEauthorblockN{{Autonomous Research Fellow}}\\IEEEauthorblockA{{Generated {_now()}}}}}
