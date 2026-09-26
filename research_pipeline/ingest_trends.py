@@ -171,7 +171,10 @@ def fetch_github_discussions(query: str, limit: int) -> list[TrendRecord]:
     payload = resp.json()
 
     if payload.get("errors"):
-        raise RuntimeError(f"GitHub GraphQL query failed: {payload['errors']}")
+        messages = "; ".join(
+            err.get("message", "unknown GraphQL error") for err in payload.get("errors", [])
+        )
+        raise RuntimeError(f"GitHub GraphQL query failed: {messages}")
 
     nodes = payload.get("data", {}).get("search", {}).get("nodes", [])
     records: list[TrendRecord] = []
