@@ -137,59 +137,68 @@ def fetch_github_discussions(query: str, limit: int) -> list[TrendRecord]:
     if not token:
         return []
     headers = {"Authorization": "Bearer " + token}
+    repo_list = [
+        repo.strip()
+        for repo in os.getenv(
+            "GH_DISCUSSION_REPOS",
+            "kubernetes/kubernetes,ceph/ceph,openzfs/zfs,hashicorp/terraform",
+        ).split(",")
+        if repo.strip() and "/" in repo
+    ]
+    keywords = [k.strip('"').lower() for k in query.replace("OR", " ").split() if len(k) > 3]
 
-    graphql_query = {
-        "query": """
-        query($query: String!, $limit: Int!) {
-          search(query: $query, type: DISCUSSION, first: $limit) {
-            nodes {
-              ... on Discussion {
+    records: list[TrendRecord] = []
+    per_repo = max(1, min(limit, 50))
+    graphql_query = """
+        query($owner: String!, $name: String!, $limit: Int!) {
+          repository(owner: $owner, name: $name) {
+            discussions(first: $limit, orderBy: {field: UPDATED_AT, direction: DESC}) {
+              nodes {
                 title
                 url
                 bodyText
                 createdAt
-                repository { nameWithOwner }
                 category { name }
               }
             }
           }
         }
-        """,
-        "variables": {
-            "query": f"{query} sort:updated-desc",
-            "limit": limit,
-        },
-    }
-
-    resp = requests.post(
-        "https://api.github.com/graphql",
-        headers=headers,
-        json=graphql_query,
-        timeout=30,
-    )
-    resp.raise_for_status()
-    payload = resp.json()
-
-    if payload.get("errors"):
-        messages = "; ".join(
-            err.get("message", "unknown GraphQL error") for err in payload.get("errors", [])
+    """
+    for repo in repo_list:
+        owner, name = repo.split("/", 1)
+        resp = requests.post(
+            "https://api.github.com/graphql",
+            headers=headers,
+            json={"query": graphql_query, "variables": {"owner": owner, "name": name, "limit": per_repo}},
+            timeout=30,
         )
-        raise RuntimeError(f"GitHub GraphQL query failed: {messages}")
+        resp.raise_for_status()
+        payload = resp.json()
 
-    nodes = payload.get("data", {}).get("search", {}).get("nodes", [])
-    records: list[TrendRecord] = []
-    for node in nodes:
-        records.append(
-            TrendRecord(
-                title=node.get("title", "untitled"),
-                summary=(node.get("bodyText", "") or "")[:1200],
-                url=node.get("url", ""),
-                source=f"GitHub Discussions:{node.get('repository', {}).get('nameWithOwner', 'unknown')}",
-                published=node.get("createdAt"),
-                tags=["github-discussion", node.get("category", {}).get("name", "")],
+        if payload.get("errors"):
+            messages = "; ".join(
+                err.get("message", "unknown GraphQL error") for err in payload.get("errors", [])
             )
-        )
-    return records
+            raise RuntimeError(f"GitHub GraphQL query failed for {repo}: {messages}")
+
+        nodes = payload.get("data", {}).get("repository", {}).get("discussions", {}).get("nodes", [])
+        for node in nodes:
+            text = f"{node.get('title', '')} {node.get('bodyText', '')}".lower()
+            if keywords and not any(keyword in text for keyword in keywords):
+                continue
+            records.append(
+                TrendRecord(
+                    title=node.get("title", "untitled"),
+                    summary=(node.get("bodyText", "") or "")[:1200],
+                    url=node.get("url", ""),
+                    source=f"GitHub Discussions:{repo}",
+                    published=node.get("createdAt"),
+                    tags=["github-discussion", node.get("category", {}).get("name", "")],
+                )
+            )
+        if len(records) >= limit:
+            break
+    return records[:limit]
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
