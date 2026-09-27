@@ -10,6 +10,14 @@ import subprocess
 
 
 OUTPUT_DIR = Path(__file__).resolve().parent
+REQUIRED_PNGS = (
+    "zero_trust_reference_architecture.png",
+    "iam_ai_agent_lifecycle.png",
+    "iam_detection_engineering_pipeline.png",
+    "cross_cloud_federation_risk_controls.png",
+    "incident_response_playbook_flow.png",
+    "token_compromise_response_flow.png",
+)
 
 
 def output_file(name: str) -> str:
@@ -137,9 +145,16 @@ def render_sequence_diagrams() -> None:
         subprocess.run(["plantuml", "-tpng", str(source)], check=True)
 
 
+def verify_expected_outputs() -> None:
+    missing = [name for name in REQUIRED_PNGS if not (OUTPUT_DIR / name).is_file()]
+    if missing:
+        raise RuntimeError(f"Missing generated figure(s): {', '.join(missing)}")
+
+
 if __name__ == "__main__":
     build_zero_trust_reference_architecture()
     build_ai_agent_lifecycle_architecture()
     build_detection_engineering_architecture()
     build_cross_cloud_federation_architecture()
     render_sequence_diagrams()
+    verify_expected_outputs()
