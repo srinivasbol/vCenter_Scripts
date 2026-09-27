@@ -48,7 +48,7 @@ AI agents execute task chains, call APIs, and may trigger financial, infrastruct
 \begin{itemize}[leftmargin=1.5em]
     \item \textbf{Token theft and replay:} Stolen refresh tokens, session cookies, or signing keys allow adversaries to bypass MFA controls if token revocation and detection lag \cite{microsoft_storm0558,cisa_storm0558}.
     \item \textbf{OAuth/OIDC misconfiguration:} Weak redirect URI controls, overbroad scopes, missing PKCE, and poor audience validation remain common in enterprise integrations \cite{oauth_security_bcp,oidc_core}.
-    \item \textbf{SSO concentration risk:} IdP outages or policy misdeployments can become enterprise-wide availability events; identity dependency maps and fallback patterns are often incomplete \cite{okta_status}.
+    \item \textbf{SSO concentration risk:} IdP outages or policy misdeployments can become enterprise-wide availability events; identity dependency maps and fallback patterns are often incomplete \cite{nist_800_61}.
     \item \textbf{Supply-chain identity risk:} Build systems, package registries, and code-signing trust paths expose machine credentials that can be abused downstream \cite{slsa,circleci_incident}.
     \item \textbf{Insider and privilege escalation risk:} Excess standing privilege, dormant admin groups, and weak break-glass governance create exploit paths that survive perimeter improvements.
     \item \textbf{CI/CD secret sprawl:} Embedded static secrets in pipelines and IaC repositories amplify compromise persistence.
@@ -157,7 +157,7 @@ The Microsoft Exchange Online intrusion reviewed by CSRB highlighted systemic ri
 \subsection{Identity Provider and Support-Channel Exposure}
 The Okta support system compromise demonstrated that identity attack paths can originate in support and administrative workflows rather than only in production auth systems \cite{okta_support_breach}. This reinforces the need to apply identity assurance and strong session controls to all privileged support channels, including third-party support tooling.
 
-SSO outages, configuration errors, and policy propagation failures also create significant business impact when identity services become single points of failure. Identity architecture must include graceful degradation controls, emergency access fallback processes, and predefined communication playbooks \cite{okta_status}.
+SSO outages, configuration errors, and policy propagation failures also create significant business impact when identity services become single points of failure. Identity architecture must include graceful degradation controls, emergency access fallback processes, and predefined communication playbooks \cite{nist_800_61}.
 
 \subsection{Supply-Chain Identity and CI/CD Credential Abuse}
 Incidents involving CI/CD pipeline credential theft and package ecosystem compromise demonstrate that software delivery systems are identity systems in practice \cite{circleci_incident,slsa}. IAM programs must therefore include build identities, signing identities, and deployment identities under the same governance and detection regime used for workforce privileged access.
