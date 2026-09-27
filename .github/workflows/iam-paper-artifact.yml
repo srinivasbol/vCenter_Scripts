@@ -9,12 +9,20 @@ on:
       - 'output/figures/**'
       - '.github/workflows/iam-paper-artifact.yml'
 
+permissions:
+  contents: read
+
 jobs:
   build-iam-paper:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
 
       - name: Install build dependencies
         run: |
@@ -42,15 +50,7 @@ jobs:
           cp output/new-paper.tex iam-paper-complete/output/
           cp output/new-paper-references.bib iam-paper-complete/output/
           cp output/new-paper.pdf iam-paper-complete/output/
-          cp output/figures/zero_trust_reference_architecture.png iam-paper-complete/output/figures/
-          cp output/figures/iam_ai_agent_lifecycle.png iam-paper-complete/output/figures/
-          cp output/figures/iam_detection_engineering_pipeline.png iam-paper-complete/output/figures/
-          cp output/figures/cross_cloud_federation_risk_controls.png iam-paper-complete/output/figures/
-          cp output/figures/incident_response_playbook_flow.png iam-paper-complete/output/figures/
-          cp output/figures/token_compromise_response_flow.png iam-paper-complete/output/figures/
-          cp output/figures/incident_response_playbook_flow.puml iam-paper-complete/output/figures/
-          cp output/figures/token_compromise_response_flow.puml iam-paper-complete/output/figures/
-          cp output/figures/generate_new_paper_diagrams.py iam-paper-complete/output/figures/
+          cp -r output/figures/. iam-paper-complete/output/figures/
           (cd iam-paper-complete && zip -r ../iam-paper-complete.zip .)
 
       - name: Upload artifact
