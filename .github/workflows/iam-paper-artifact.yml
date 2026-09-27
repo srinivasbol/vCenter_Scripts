@@ -39,8 +39,6 @@ jobs:
       - name: Generate diagrams
         run: |
           python output/figures/generate_new_paper_diagrams.py
-          plantuml -tpng output/figures/incident_response_playbook_flow.puml
-          plantuml -tpng output/figures/token_compromise_response_flow.puml
 
       - name: Verify figures required by paper exist
         run: |

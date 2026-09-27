@@ -6,6 +6,7 @@ from diagrams.onprem.security import Vault
 from diagrams.programming.flowchart import Decision
 from diagrams.programming.language import Python
 from pathlib import Path
+import subprocess
 
 
 OUTPUT_DIR = Path(__file__).resolve().parent
@@ -128,8 +129,17 @@ def build_cross_cloud_federation_architecture() -> None:
         posture >> soc
 
 
+def render_sequence_diagrams() -> None:
+    for source in (
+        OUTPUT_DIR / "incident_response_playbook_flow.puml",
+        OUTPUT_DIR / "token_compromise_response_flow.puml",
+    ):
+        subprocess.run(["plantuml", "-tpng", str(source)], check=True)
+
+
 if __name__ == "__main__":
     build_zero_trust_reference_architecture()
     build_ai_agent_lifecycle_architecture()
     build_detection_engineering_architecture()
     build_cross_cloud_federation_architecture()
+    render_sequence_diagrams()
