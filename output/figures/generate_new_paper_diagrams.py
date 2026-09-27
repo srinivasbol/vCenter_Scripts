@@ -5,15 +5,20 @@ from diagrams.onprem.network import Nginx
 from diagrams.onprem.security import Vault
 from diagrams.programming.flowchart import Decision
 from diagrams.programming.language import Python
+from pathlib import Path
 
 
-OUTPUT_DIR = "output/figures"
+OUTPUT_DIR = Path(__file__).resolve().parent
+
+
+def output_file(name: str) -> str:
+    return str(OUTPUT_DIR / name)
 
 
 def build_zero_trust_reference_architecture() -> None:
     with Diagram(
         "Zero Trust Reference Architecture for IAM Operations",
-        filename=f"{OUTPUT_DIR}/zero_trust_reference_architecture",
+        filename=output_file("zero_trust_reference_architecture"),
         show=False,
         direction="LR",
     ):
@@ -48,7 +53,7 @@ def build_zero_trust_reference_architecture() -> None:
 def build_ai_agent_lifecycle_architecture() -> None:
     with Diagram(
         "AI Agent Identity Lifecycle Architecture",
-        filename=f"{OUTPUT_DIR}/iam_ai_agent_lifecycle",
+        filename=output_file("iam_ai_agent_lifecycle"),
         show=False,
         direction="TB",
     ):
@@ -73,7 +78,7 @@ def build_ai_agent_lifecycle_architecture() -> None:
 def build_detection_engineering_architecture() -> None:
     with Diagram(
         "IAM Detection Engineering Pipeline",
-        filename=f"{OUTPUT_DIR}/iam_detection_engineering_pipeline",
+        filename=output_file("iam_detection_engineering_pipeline"),
         show=False,
         direction="LR",
     ):
@@ -94,7 +99,7 @@ def build_detection_engineering_architecture() -> None:
 def build_cross_cloud_federation_architecture() -> None:
     with Diagram(
         "Cross-Cloud Federation Control Architecture",
-        filename=f"{OUTPUT_DIR}/cross_cloud_federation_risk_controls",
+        filename=output_file("cross_cloud_federation_risk_controls"),
         show=False,
         direction="LR",
     ):

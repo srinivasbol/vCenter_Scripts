@@ -36,6 +36,18 @@ jobs:
           plantuml -tpng output/figures/incident_response_playbook_flow.puml
           plantuml -tpng output/figures/token_compromise_response_flow.puml
 
+      - name: Verify figures required by paper exist
+        run: |
+          for f in \
+            output/figures/zero_trust_reference_architecture.png \
+            output/figures/iam_ai_agent_lifecycle.png \
+            output/figures/iam_detection_engineering_pipeline.png \
+            output/figures/cross_cloud_federation_risk_controls.png \
+            output/figures/incident_response_playbook_flow.png \
+            output/figures/token_compromise_response_flow.png; do
+            test -f "$f"
+          done
+
       - name: Build PDF
         working-directory: output
         run: |
