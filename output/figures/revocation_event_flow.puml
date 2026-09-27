@@ -1,0 +1,18 @@
+@startuml
+title IAM Revocation Propagation Sequence
+actor "SOC Analyst" as SOC
+participant "IdP (Okta/AAD)" as IDP
+participant "Revocation Event Bus" as BUS
+participant "Policy Enforcement Point" as PEP
+participant "Token Cache" as CACHE
+participant "API Gateway" as API
+participant "SIEM" as SIEM
+
+SOC -> IDP: Disable user + rotate credentials
+IDP -> BUS: Publish signed revocation event
+BUS -> PEP: Push deny principal directive
+BUS -> CACHE: Invalidate subject/session keys
+PEP -> API: Enforce deny + quarantine route
+API -> API: Terminate active sessions
+BUS -> SIEM: Persist immutable timeline event
+@enduml
