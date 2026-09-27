@@ -1,0 +1,22 @@
+@startuml
+actor "Attacker" as X
+participant "Compromised App" as APP
+participant "Token Service" as TS
+participant "Risk Engine" as RISK
+participant "API Gateway" as API
+participant "SOC" as SOC
+participant "SOAR" as SOAR
+
+X -> APP: Steal refresh token
+X -> API: Replay stolen token
+API -> TS: Introspect token
+TS --> API: Token valid (initially)
+API -> RISK: Request continuous risk score
+RISK --> API: High anomaly (impossible travel + device mismatch)
+API -> SOC: Emit critical alert
+SOC -> SOAR: Start token compromise workflow
+SOAR -> TS: Revoke token family + signing keys rotation check
+SOAR -> API: Block user/session pair
+SOAR -> APP: Force re-auth (phishing-resistant MFA)
+SOC -> SOAR: Validate no further abuse
+@enduml
