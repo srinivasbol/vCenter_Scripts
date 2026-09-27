@@ -8,6 +8,12 @@ on:
       - 'output/new-paper-references.bib'
       - 'output/figures/**'
       - '.github/workflows/iam-paper-artifact.yml'
+  pull_request:
+    paths:
+      - 'output/new-paper.tex'
+      - 'output/new-paper-references.bib'
+      - 'output/figures/**'
+      - '.github/workflows/iam-paper-artifact.yml'
 
 permissions:
   contents: read
@@ -45,7 +51,7 @@ jobs:
             output/figures/cross_cloud_federation_risk_controls.png \
             output/figures/incident_response_playbook_flow.png \
             output/figures/token_compromise_response_flow.png; do
-            test -f "$f"
+            test -s "$f"
           done
 
       - name: Build PDF

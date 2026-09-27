@@ -135,6 +135,7 @@ Figure~\ref{fig:irplaybook} presents an event flow aligned to SP 800-61r2 prepar
     \centering
     \includegraphics[width=0.94\textwidth]{figures/iam_detection_engineering_pipeline.png}
     \caption{Detection engineering pipeline connecting IAM telemetry to runbook automation and SLO reporting.}
+    \label{fig:detectionpipeline}
 \end{figure}
 
 A production pipeline should include quality gates for detection precision, time-to-triage, and false-positive suppression. Detections are managed as code with controlled deployment, test datasets, and rollback plans. High-confidence detections trigger automatic containment actions; medium-confidence detections generate analyst-guided investigations.
