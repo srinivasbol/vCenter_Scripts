@@ -1,0 +1,19 @@
+@startuml
+title Combined Failure Sequence (Revocation + Storage + Thermal)
+participant "IdP" as IDP
+participant "Cross-domain Orchestrator" as ORCH
+participant "Storage Controller" as STOR
+participant "GPU Thermal Controller" as GPU
+participant "Auth Service" as AUTH
+participant "Incident Commander" as IC
+
+IDP -> ORCH: Critical revocation event
+STOR -> ORCH: Tier-0 latency and path failure
+GPU -> ORCH: Thermal hotspot > threshold
+ORCH -> AUTH: Enter safe mode
+AUTH -> AUTH: Freeze non-critical writes
+ORCH -> STOR: Promote standby + fence stale writer
+ORCH -> GPU: Shed inferencing and cap clocks
+AUTH -> IC: Report state + residual risk
+ORCH -> IC: Correlated timeline and remediation status
+@enduml
