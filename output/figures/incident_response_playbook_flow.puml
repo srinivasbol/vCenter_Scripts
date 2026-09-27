@@ -1,0 +1,25 @@
+@startuml
+actor Analyst as A
+participant "SIEM" as SIEM
+participant "IAM SOAR" as SOAR
+participant "IdP" as IDP
+participant "PAM/JIT" as PAM
+participant "Service Owner" as OWNER
+participant "Incident Commander" as IC
+
+A -> SIEM: Triage high-risk IAM alert
+SIEM -> SOAR: Trigger identity incident playbook
+SOAR -> IDP: Pull token/session metadata
+SOAR -> PAM: Validate privileged session grants
+SOAR -> A: Evidence package + blast radius
+A -> IC: Declare incident severity
+IC -> OWNER: Request business impact assessment
+IC -> SOAR: Authorize containment
+SOAR -> IDP: Revoke refresh/session tokens
+SOAR -> PAM: Suspend active privileged elevation
+SOAR -> SIEM: Increase telemetry sampling
+A -> IC: Confirm containment effectiveness
+IC -> OWNER: Approve staged recovery
+OWNER -> IDP: Re-enable constrained access
+SOAR -> SIEM: Close incident + lessons learned tasks
+@enduml

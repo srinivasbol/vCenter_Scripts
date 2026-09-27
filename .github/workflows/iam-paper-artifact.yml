@@ -1,0 +1,60 @@
+name: Build IAM Paper Artifact
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'output/new-paper.tex'
+      - 'output/new-paper-references.bib'
+      - 'output/figures/**'
+      - '.github/workflows/iam-paper-artifact.yml'
+
+jobs:
+  build-iam-paper:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-bibtex-extra texlive-pictures plantuml graphviz zip
+          python -m pip install diagrams
+
+      - name: Generate diagrams
+        run: |
+          python output/figures/generate_new_paper_diagrams.py
+          plantuml -tpng output/figures/incident_response_playbook_flow.puml
+          plantuml -tpng output/figures/token_compromise_response_flow.puml
+
+      - name: Build PDF
+        working-directory: output
+        run: |
+          pdflatex -interaction=nonstopmode new-paper.tex
+          bibtex new-paper
+          pdflatex -interaction=nonstopmode new-paper.tex
+          pdflatex -interaction=nonstopmode new-paper.tex
+
+      - name: Prepare package
+        run: |
+          mkdir -p iam-paper-complete/output/figures
+          cp output/new-paper.tex iam-paper-complete/output/
+          cp output/new-paper-references.bib iam-paper-complete/output/
+          cp output/new-paper.pdf iam-paper-complete/output/
+          cp output/figures/zero_trust_reference_architecture.png iam-paper-complete/output/figures/
+          cp output/figures/iam_ai_agent_lifecycle.png iam-paper-complete/output/figures/
+          cp output/figures/iam_detection_engineering_pipeline.png iam-paper-complete/output/figures/
+          cp output/figures/cross_cloud_federation_risk_controls.png iam-paper-complete/output/figures/
+          cp output/figures/incident_response_playbook_flow.png iam-paper-complete/output/figures/
+          cp output/figures/token_compromise_response_flow.png iam-paper-complete/output/figures/
+          cp output/figures/incident_response_playbook_flow.puml iam-paper-complete/output/figures/
+          cp output/figures/token_compromise_response_flow.puml iam-paper-complete/output/figures/
+          cp output/figures/generate_new_paper_diagrams.py iam-paper-complete/output/figures/
+          (cd iam-paper-complete && zip -r ../iam-paper-complete.zip .)
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iam-paper-complete
+          path: iam-paper-complete.zip
